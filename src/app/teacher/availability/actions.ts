@@ -1,0 +1,46 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
+
+export async function createSlotAction(_prev: unknown, formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "TEACHER") return { error: "権限がありません" };
+
+  const startStr = String(formData.get("start") || "");
+  const duration = parseInt(String(formData.get("duration") || "60"), 10);
+  if (!startStr) return { error: "開始日時を入力してください" };
+
+  const start = new Date(startStr);
+  if (isNaN(start.getTime())) return { error: "日時が正しくありません" };
+  if (start.getTime() < Date.now()) return { error: "過去の日時は登録できません" };
+
+  const end = new Date(start.getTime() + duration * 60 * 1000);
+
+  const overlap = await prisma.slot.findFirst({
+    where: {
+      teacherId: user.id,
+      startTime: { lt: end },
+      endTime: { gt: start },
+    },
+  });
+  if (overlap) return { error: "既存の枠と時間が重複しています" };
+
+  await prisma.slot.create({
+    data: { teacherId: user.id, startTime: start, endTime: end },
+  });
+  revalidatePath("/teacher/availability");
+  return { ok: true };
+}
+
+export async function deleteSlotAction(formData: FormData) {
+  const user = await requireUser();
+  if (user.role !== "TEACHER") return;
+  const slotId = String(formData.get("slotId") || "");
+  const slot = await prisma.slot.findUnique({ where: { id: slotId } });
+  if (!slot || slot.teacherId !== user.id) return;
+  if (slot.status === "BOOKED") return;
+  await prisma.slot.delete({ where: { id: slotId } });
+  revalidatePath("/teacher/availability");
+}

@@ -1,0 +1,136 @@
+// オンライン家庭教師アプリ - データモデル
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  TEACHER
+  STUDENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String
+  role         Role
+  createdAt    DateTime @default(now())
+
+  // teacher が作成した予約枠
+  slotsAsTeacher    Slot[]    @relation("TeacherSlots")
+  // student が予約した枠
+  slotsAsStudent    Slot[]    @relation("StudentSlots")
+  // 授業
+  lessonsAsTeacher  Lesson[]  @relation("TeacherLessons")
+  lessonsAsStudent  Lesson[]  @relation("StudentLessons")
+  // メッセージ
+  messages          Message[]
+  // 成績
+  grades            Grade[]
+  // フィードバック
+  feedbacks         Feedback[]
+  // 画像更新者
+  problemImages     ProblemImage[]
+}
+
+// 予約枠: 先生が授業可能枠を作る。生徒が1人予約すると BOOKED になり他生徒からは埋まって見える
+model Slot {
+  id        String   @id @default(cuid())
+  teacher   User     @relation("TeacherSlots", fields: [teacherId], references: [id])
+  teacherId String
+  startTime DateTime
+  endTime   DateTime
+  status    String   @default("OPEN") // OPEN | BOOKED
+  student   User?    @relation("StudentSlots", fields: [studentId], references: [id])
+  studentId String?
+  lesson    Lesson?
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
+  @@index([status])
+}
+
+// 授業: 予約が確定すると生成。ビデオURLを自動生成
+model Lesson {
+  id        String   @id @default(cuid())
+  slot      Slot     @relation(fields: [slotId], references: [id])
+  slotId    String   @unique
+  teacher   User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+  teacherId String
+  student   User     @relation("StudentLessons", fields: [studentId], references: [id])
+  studentId String
+  startTime DateTime
+  endTime   DateTime
+  videoUrl  String
+  status    String   @default("SCHEDULED") // SCHEDULED | DONE | CANCELLED
+  createdAt DateTime @default(now())
+
+  problemImages ProblemImage[]
+  feedbacks     Feedback[]
+
+  @@index([teacherId])
+  @@index([studentId])
+}
+
+// 問題画像: 授業ごと。先生・生徒どちらからでも追加/削除できる
+model ProblemImage {
+  id         String   @id @default(cuid())
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId   String
+  data       String   // base64 data URL
+  caption    String   @default("")
+  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  createdAt  DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+// チャット: 先生と生徒の会話 (生徒ごとのスレッド)
+model Message {
+  id         String   @id @default(cuid())
+  studentId  String   // 会話相手の生徒 (スレッド識別)
+  sender     User     @relation(fields: [senderId], references: [id])
+  senderId   String
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([studentId])
+}
+
+// 授業後フィードバック: 先生・生徒双方から
+model Feedback {
+  id        String   @id @default(cuid())
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  authorRole String  // TEACHER | STUDENT
+  body      String
+  rating    Int?     // 任意の5段階評価
+  createdAt DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+// 成績: 生徒が入力、先生はいつでも閲覧
+model Grade {
+  id        String   @id @default(cuid())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId String
+  type      String   // TEST(テスト点数) | NAISHIN(内申点)
+  subject   String   // 教科
+  score     Float    // 点数 or 内申評定
+  maxScore  Float?   // テスト満点 (内申は省略可)
+  examName  String   @default("") // 「中間テスト」など
+  date      DateTime
+  note      String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+}
