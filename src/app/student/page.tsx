@@ -6,14 +6,15 @@ import { fmtRange } from "@/lib/format";
 export default async function StudentHome() {
   const user = await requireUser();
   const now = new Date();
-  const [upcoming, past] = await Promise.all([
+  const [me, upcoming, past] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { pointsBalance: true } }),
     prisma.lesson.findMany({
-      where: { studentId: user.id, endTime: { gte: now } },
+      where: { studentId: user.id, status: { not: "CANCELLED" }, endTime: { gte: now } },
       orderBy: { startTime: "asc" },
       include: { teacher: true },
     }),
     prisma.lesson.findMany({
-      where: { studentId: user.id, endTime: { lt: now } },
+      where: { studentId: user.id, status: { not: "CANCELLED" }, endTime: { lt: now } },
       orderBy: { startTime: "desc" },
       include: { teacher: true },
       take: 5,
@@ -24,7 +25,12 @@ export default async function StudentHome() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">こんにちは、{user.name}</h1>
-        <Link href="/student/book" className="btn-primary">＋ 授業を予約</Link>
+        <div className="flex items-center gap-2">
+          <Link href="/student/points" className="card !px-3 !py-2 text-center">
+            <p className="text-lg font-black text-brand-600">{me.pointsBalance}<span className="text-xs">pt</span></p>
+          </Link>
+          <Link href="/student/book" className="btn-primary">＋ 授業を予約</Link>
+        </div>
       </div>
 
       <section className="card">
@@ -38,7 +44,7 @@ export default async function StudentHome() {
             {upcoming.map((l) => (
               <Link key={l.id} href={`/student/lessons/${l.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 p-3 hover:bg-slate-100">
                 <div>
-                  <p className="font-medium">{l.teacher.name} 先生</p>
+                  <p className="font-medium">{l.teacher.name} 先生<span className="ml-2 text-sm font-normal text-slate-400">{l.subject}</span></p>
                   <p className="text-sm text-slate-500">{fmtRange(l.startTime, l.endTime)}</p>
                 </div>
                 <span className="text-brand-600">開く →</span>
@@ -54,7 +60,7 @@ export default async function StudentHome() {
           <div className="space-y-2">
             {past.map((l) => (
               <Link key={l.id} href={`/student/lessons/${l.id}`} className="flex items-center justify-between rounded-lg bg-slate-50 p-3 opacity-80 hover:opacity-100">
-                <p className="text-sm">{fmtRange(l.startTime, l.endTime)}</p>
+                <p className="text-sm">{fmtRange(l.startTime, l.endTime)}<span className="ml-2 text-slate-400">{l.subject}</span></p>
                 <span className="text-xs text-slate-400">フィードバックを書く →</span>
               </Link>
             ))}

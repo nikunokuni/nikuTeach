@@ -19,12 +19,11 @@ model User {
   passwordHash String
   name         String
   role         Role
+  pointsBalance Int     @default(0) // 予約ポイント残高 (1pt = 30分)
   createdAt    DateTime @default(now())
 
-  // teacher が作成した予約枠
+  // teacher が作成した授業可能枠(窓)
   slotsAsTeacher    Slot[]    @relation("TeacherSlots")
-  // student が予約した枠
-  slotsAsStudent    Slot[]    @relation("StudentSlots")
   // 授業
   lessonsAsTeacher  Lesson[]  @relation("TeacherLessons")
   lessonsAsStudent  Lesson[]  @relation("StudentLessons")
@@ -36,57 +35,79 @@ model User {
   feedbacks         Feedback[]
   // 画像更新者
   problemImages     ProblemImage[]
+  // ポイント履歴
+  pointTransactions PointTransaction[]
+  // 先生が「この生徒」について書くメモ
+  notesAboutMe      StudentNote[]   @relation("StudentNotes")
+  // 先生→「この生徒」へのまとめノート
+  summaryNotes      SummaryNote[]   @relation("StudentSummaryNotes")
+  // 先生の授業カンペ(ライブラリ)
+  cheatSheets       CheatSheet[]    @relation("TeacherCheatSheets")
 }
 
-// 予約枠: 先生が授業可能枠を作る。生徒が1人予約すると BOOKED になり他生徒からは埋まって見える
+// 授業可能な時間帯(窓): 先生が登録。生徒はこの窓の中の一部を予約する。
+// 予約された部分は他の生徒からは埋まって見える(重複予約は不可)。
 model Slot {
   id        String   @id @default(cuid())
   teacher   User     @relation("TeacherSlots", fields: [teacherId], references: [id])
   teacherId String
   startTime DateTime
   endTime   DateTime
-  status    String   @default("OPEN") // OPEN | BOOKED
-  student   User?    @relation("StudentSlots", fields: [studentId], references: [id])
-  studentId String?
-  lesson    Lesson?
   createdAt DateTime @default(now())
+
+  lessons   Lesson[] // この窓の中で予約された授業(複数可)
 
   @@index([teacherId])
-  @@index([status])
 }
 
-// 授業: 予約が確定すると生成。ビデオURLを自動生成
+// 授業: 予約が確定すると生成。ビデオURLを自動生成。ポイントを消費。
 model Lesson {
-  id        String   @id @default(cuid())
-  slot      Slot     @relation(fields: [slotId], references: [id])
-  slotId    String   @unique
-  teacher   User     @relation("TeacherLessons", fields: [teacherId], references: [id])
-  teacherId String
-  student   User     @relation("StudentLessons", fields: [studentId], references: [id])
-  studentId String
-  startTime DateTime
-  endTime   DateTime
-  videoUrl  String
-  status    String   @default("SCHEDULED") // SCHEDULED | DONE | CANCELLED
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  slot       Slot?    @relation(fields: [slotId], references: [id])
+  slotId     String?
+  teacher    User     @relation("TeacherLessons", fields: [teacherId], references: [id])
+  teacherId  String
+  student    User     @relation("StudentLessons", fields: [studentId], references: [id])
+  studentId  String
+  subject    String   @default("") // 科目
+  startTime  DateTime
+  endTime    DateTime
+  pointsCost Int      @default(1) // 消費ポイント (= 長さ/30分)
+  videoUrl   String
+  status     String   @default("SCHEDULED") // SCHEDULED | DONE | CANCELLED
+  createdAt  DateTime @default(now())
 
   problemImages ProblemImage[]
   feedbacks     Feedback[]
 
   @@index([teacherId])
   @@index([studentId])
+  @@index([slotId])
+}
+
+// ポイント取引履歴: 購入(+) / 予約消費(-) / 返却(+)
+model PointTransaction {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  amount    Int      // +購入/返却, -消費
+  reason    String   // PURCHASE | BOOKING | REFUND
+  detail    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // 問題画像: 授業ごと。先生・生徒どちらからでも追加/削除できる
 model ProblemImage {
-  id         String   @id @default(cuid())
-  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  lessonId   String
-  data       String   // base64 data URL
-  caption    String   @default("")
-  uploadedBy User     @relation(fields: [uploadedById], references: [id])
+  id           String   @id @default(cuid())
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId     String
+  data         String   // base64 data URL
+  caption      String   @default("")
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
   uploadedById String
-  createdAt  DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@index([lessonId])
 }
@@ -105,15 +126,15 @@ model Message {
 
 // 授業後フィードバック: 先生・生徒双方から
 model Feedback {
-  id        String   @id @default(cuid())
-  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  lessonId  String
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  String
-  authorRole String  // TEACHER | STUDENT
-  body      String
-  rating    Int?     // 任意の5段階評価
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  lesson     Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  lessonId   String
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  authorRole String   // TEACHER | STUDENT
+  body       String
+  rating     Int?     // 任意の5段階評価
+  createdAt  DateTime @default(now())
 
   @@index([lessonId])
 }
@@ -133,4 +154,43 @@ model Grade {
   createdAt DateTime @default(now())
 
   @@index([studentId])
+}
+
+// 生徒メモ: 先生が生徒の特徴・習熟度を逐一記録。授業中でも時間外でも編集可。
+model StudentNote {
+  id        String   @id @default(cuid())
+  student   User     @relation("StudentNotes", fields: [studentId], references: [id])
+  studentId String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+}
+
+// まとめノート: 先生が作成して生徒に投稿。生徒はいつでも閲覧。チャットとは別。
+model SummaryNote {
+  id        String   @id @default(cuid())
+  student   User     @relation("StudentSummaryNotes", fields: [studentId], references: [id])
+  studentId String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+}
+
+// 授業カンペ: 先生が事前に作る再利用ライブラリ。授業中に参照する。
+model CheatSheet {
+  id        String   @id @default(cuid())
+  teacher   User     @relation("TeacherCheatSheets", fields: [teacherId], references: [id])
+  teacherId String
+  title     String
+  subject   String   @default("")
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([teacherId])
 }

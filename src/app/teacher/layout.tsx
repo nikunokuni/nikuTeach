@@ -4,8 +4,10 @@ import AppShell from "@/components/AppShell";
 
 const NAV = [
   { href: "/teacher", label: "ホーム" },
+  { href: "/teacher/calendar", label: "カレンダー" },
   { href: "/teacher/availability", label: "予約枠" },
   { href: "/teacher/students", label: "生徒・成績" },
+  { href: "/teacher/cheatsheets", label: "カンペ" },
   { href: "/teacher/chat", label: "チャット" },
 ];
 

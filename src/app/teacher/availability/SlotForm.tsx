@@ -18,22 +18,19 @@ export default function SlotForm() {
     <form ref={ref} action={formAction} className="flex flex-wrap items-end gap-3">
       <div className="flex-1 min-w-[200px]">
         <label className="label" htmlFor="start">開始日時</label>
-        <input id="start" name="start" type="datetime-local" className="input" required />
+        <input id="start" name="start" type="datetime-local" step="1800" className="input" required />
       </div>
-      <div className="w-32">
-        <label className="label" htmlFor="duration">時間</label>
-        <select id="duration" name="duration" className="input" defaultValue="60">
-          <option value="30">30分</option>
-          <option value="45">45分</option>
-          <option value="60">60分</option>
-          <option value="90">90分</option>
-          <option value="120">120分</option>
-        </select>
+      <div className="flex-1 min-w-[200px]">
+        <label className="label" htmlFor="end">終了日時</label>
+        <input id="end" name="end" type="datetime-local" step="1800" className="input" required />
       </div>
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "追加中..." : "枠を追加"}
       </button>
       {state?.error && <p className="w-full text-sm text-rose-600">{state.error}</p>}
+      <p className="w-full text-xs text-slate-400">
+        この時間帯の中から、生徒が30分単位で開始時間・長さ・科目を選んで予約します。
+      </p>
     </form>
   );
 }

@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { cancelLesson } from "@/lib/booking";
 
 export async function submitFeedbackAction(_prev: unknown, formData: FormData) {
   const user = await requireUser();
@@ -37,4 +39,16 @@ export async function submitFeedbackAction(_prev: unknown, formData: FormData) {
   revalidatePath(`/teacher/lessons/${lessonId}`);
   revalidatePath(`/student/lessons/${lessonId}`);
   return { ok: true };
+}
+
+// 予約キャンセル: ポイントは生徒に返却される。先生・生徒どちらからでも可能。
+export async function cancelLessonAction(formData: FormData) {
+  const user = await requireUser();
+  const lessonId = String(formData.get("lessonId") || "");
+  await cancelLesson(lessonId, user.id);
+  revalidatePath("/teacher/calendar");
+  revalidatePath("/teacher/availability");
+  revalidatePath("/student");
+  revalidatePath("/student/book");
+  redirect(user.role === "TEACHER" ? "/teacher" : "/student");
 }

@@ -8,12 +8,12 @@ export default async function TeacherHome() {
   const now = new Date();
   const [upcoming, openSlots, studentCount, newFeedback] = await Promise.all([
     prisma.lesson.findMany({
-      where: { teacherId: user.id, endTime: { gte: now } },
+      where: { teacherId: user.id, status: { not: "CANCELLED" }, endTime: { gte: now } },
       orderBy: { startTime: "asc" },
       include: { student: true },
       take: 5,
     }),
-    prisma.slot.count({ where: { teacherId: user.id, status: "OPEN", startTime: { gte: now } } }),
+    prisma.slot.count({ where: { teacherId: user.id, endTime: { gte: now } } }),
     prisma.user.count({ where: { role: "STUDENT" } }),
     prisma.feedback.findMany({
       where: { lesson: { teacherId: user.id }, authorRole: "STUDENT" },
@@ -30,7 +30,7 @@ export default async function TeacherHome() {
       <div className="grid grid-cols-3 gap-3">
         <Link href="/teacher/availability" className="card text-center">
           <p className="text-2xl font-black text-brand-600">{openSlots}</p>
-          <p className="text-xs text-slate-500">空き枠</p>
+          <p className="text-xs text-slate-500">今後の枠</p>
         </Link>
         <Link href="/teacher/students" className="card text-center">
           <p className="text-2xl font-black text-emerald-600">{studentCount}</p>
