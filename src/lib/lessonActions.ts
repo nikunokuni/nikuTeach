@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireUser, roleHomePath } from "@/lib/auth";
 import { cancelLesson } from "@/lib/booking";
 
 export async function submitFeedbackAction(_prev: unknown, formData: FormData) {
@@ -50,5 +50,5 @@ export async function cancelLessonAction(formData: FormData) {
   revalidatePath("/teacher/availability");
   revalidatePath("/student");
   revalidatePath("/student/book");
-  redirect(user.role === "TEACHER" ? "/teacher" : "/student");
+  redirect(roleHomePath(user.role));
 }

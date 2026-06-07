@@ -1,8 +1,14 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/login/actions";
-import type { SessionUser } from "@/lib/auth";
+import { roleHomePath, type SessionUser } from "@/lib/auth";
 
 type NavItem = { href: string; label: string };
+
+const ROLE_BADGE: Record<SessionUser["role"], { label: string; className: string }> = {
+  TEACHER: { label: "先生", className: "bg-brand-100 text-brand-700" },
+  STUDENT: { label: "生徒", className: "bg-emerald-100 text-emerald-700" },
+  SUPPORTER: { label: "応援団", className: "bg-amber-100 text-amber-700" },
+};
 
 export default function AppShell({
   user,
@@ -13,12 +19,12 @@ export default function AppShell({
   nav: NavItem[];
   children: React.ReactNode;
 }) {
-  const isTeacher = user.role === "TEACHER";
+  const badge = ROLE_BADGE[user.role];
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
-          <Link href={isTeacher ? "/teacher" : "/student"} className="flex items-center gap-2 font-bold">
+          <Link href={roleHomePath(user.role)} className="flex items-center gap-2 font-bold">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-black text-white">肉</span>
             <span className="hidden sm:inline">nikuTeach</span>
           </Link>
@@ -30,9 +36,7 @@ export default function AppShell({
             ))}
           </nav>
           <div className="flex items-center gap-3">
-            <span className={`badge ${isTeacher ? "bg-brand-100 text-brand-700" : "bg-emerald-100 text-emerald-700"}`}>
-              {isTeacher ? "先生" : "生徒"}
-            </span>
+            <span className={`badge ${badge.className}`}>{badge.label}</span>
             <span className="hidden text-sm text-slate-600 sm:inline">{user.name}</span>
             <form action={logoutAction}>
               <button type="submit" className="text-sm text-slate-400 hover:text-rose-600">ログアウト</button>

@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { createSession, destroySession } from "@/lib/auth";
+import { createSession, destroySession, roleHomePath } from "@/lib/auth";
 
 export async function loginAction(_prev: unknown, formData: FormData) {
   const username = String(formData.get("username") || "").trim();
@@ -16,7 +16,7 @@ export async function loginAction(_prev: unknown, formData: FormData) {
     return { error: "ユーザー名またはパスワードが正しくありません" };
   }
   await createSession(user.id);
-  redirect(user.role === "TEACHER" ? "/teacher" : "/student");
+  redirect(roleHomePath(user.role));
 }
 
 export async function logoutAction() {

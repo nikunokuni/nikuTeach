@@ -11,6 +11,7 @@ datasource db {
 enum Role {
   TEACHER
   STUDENT
+  SUPPORTER
 }
 
 model User {
@@ -43,6 +44,8 @@ model User {
   summaryNotes      SummaryNote[]   @relation("StudentSummaryNotes")
   // 先生の授業カンペ(ライブラリ)
   cheatSheets       CheatSheet[]    @relation("TeacherCheatSheets")
+  // 応援団向けに投稿した「がんばってることエピソード」
+  episodes          Episode[]
 }
 
 // 授業可能な時間帯(窓): 先生が登録。生徒はこの窓の中の一部を予約する。
@@ -193,4 +196,18 @@ model CheatSheet {
   updatedAt DateTime @updatedAt
 
   @@index([teacherId])
+}
+
+// がんばってることエピソード: 先生・生徒が「最近がんばってること/勉強の状況」を投稿。
+// 応援団(資金援助者)はこれを見て、応援したくなる・応援してよかったと思える材料にする。
+model Episode {
+  id         String   @id @default(cuid())
+  author     User     @relation(fields: [authorId], references: [id])
+  authorId   String
+  authorRole String   // TEACHER | STUDENT
+  title      String
+  body       String
+  createdAt  DateTime @default(now())
+
+  @@index([authorId])
 }

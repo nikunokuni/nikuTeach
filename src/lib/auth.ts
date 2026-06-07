@@ -64,3 +64,10 @@ export async function requireUser(): Promise<SessionUser> {
   if (!user) throw new Error("UNAUTHORIZED");
   return user;
 }
+
+// 役割ごとのホーム画面パス
+export function roleHomePath(role: Role): string {
+  if (role === "TEACHER") return "/teacher";
+  if (role === "SUPPORTER") return "/supporter";
+  return "/student";
+}

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, roleHomePath } from "@/lib/auth";
 import AppShell from "@/components/AppShell";
 
 const NAV = [
@@ -8,12 +8,13 @@ const NAV = [
   { href: "/teacher/availability", label: "予約枠" },
   { href: "/teacher/students", label: "生徒・成績" },
   { href: "/teacher/cheatsheets", label: "カンペ" },
+  { href: "/teacher/episodes", label: "応援団へ報告" },
   { href: "/teacher/chat", label: "チャット" },
 ];
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
-  if (user.role !== "TEACHER") redirect("/student");
+  if (user.role !== "TEACHER") redirect(roleHomePath(user.role));
   return <AppShell user={user} nav={NAV}>{children}</AppShell>;
 }

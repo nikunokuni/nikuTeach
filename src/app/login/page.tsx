@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, roleHomePath } from "@/lib/auth";
 import LoginForm from "./LoginForm";
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
-  if (user) redirect(user.role === "TEACHER" ? "/teacher" : "/student");
+  if (user) redirect(roleHomePath(user.role));
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 to-slate-100 px-4">
@@ -20,7 +20,7 @@ export default async function LoginPage() {
           <LoginForm />
         </div>
         <p className="mt-4 text-center text-xs text-slate-400">
-          初期アカウント — 先生: teacher / teacher123 ・ 生徒: student / student123
+          初期アカウント — 先生: teacher / teacher123 ・ 生徒: student / student123 ・ 応援団: supporter / supporter123
         </p>
       </div>
     </main>
