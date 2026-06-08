@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/apiAuth";
+import { isLessonParticipant } from "@/lib/lessonAccess";
 
 async function canAccess(lessonId: string, userId: string) {
   const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
-  if (!lesson) return null;
-  if (lesson.teacherId !== userId && lesson.studentId !== userId) return null;
+  if (!lesson || !isLessonParticipant(lesson, userId)) return null;
   return lesson;
 }
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireApiUser();
+  if (auth.error) return auth.error;
+  const user = auth.user;
+
   const { id } = await params;
   if (!(await canAccess(id, user.id))) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
@@ -24,8 +26,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 }
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireApiUser();
+  if (auth.error) return auth.error;
+  const user = auth.user;
+
   const { id } = await params;
   if (!(await canAccess(id, user.id))) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 

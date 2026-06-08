@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { cancelLesson } from "@/lib/booking";
+import { isLessonParticipant } from "@/lib/lessonAccess";
 
 export async function submitFeedbackAction(_prev: unknown, formData: FormData) {
   const user = await requireUser();
@@ -17,7 +18,7 @@ export async function submitFeedbackAction(_prev: unknown, formData: FormData) {
 
   const lesson = await prisma.lesson.findUnique({ where: { id: lessonId } });
   if (!lesson) return { error: "授業が見つかりません" };
-  if (lesson.teacherId !== user.id && lesson.studentId !== user.id) {
+  if (!isLessonParticipant(lesson, user.id)) {
     return { error: "権限がありません" };
   }
 

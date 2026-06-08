@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { findStudentById } from "@/lib/students";
 
 export async function createSummaryNoteAction(_prev: unknown, formData: FormData) {
   const user = await requireUser();
@@ -14,7 +15,7 @@ export async function createSummaryNoteAction(_prev: unknown, formData: FormData
   if (!title) return { error: "タイトルを入力してください" };
   if (!body) return { error: "本文を入力してください" };
 
-  const student = await prisma.user.findFirst({ where: { id: studentId, role: "STUDENT" } });
+  const student = await findStudentById(studentId);
   if (!student) return { error: "生徒が見つかりません" };
 
   await prisma.summaryNote.create({ data: { studentId, title, body } });

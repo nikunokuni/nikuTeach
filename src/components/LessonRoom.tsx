@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { fmtRange } from "@/lib/format";
 import type { SessionUser } from "@/lib/auth";
+import { isLessonParticipant } from "@/lib/lessonAccess";
 import ProblemBoard from "./ProblemBoard";
 import FeedbackForm from "./FeedbackForm";
 import CheatSheetPanel from "./CheatSheetPanel";
@@ -28,7 +29,7 @@ export default async function LessonRoom({
     },
   });
 
-  if (!lesson || (lesson.teacherId !== user.id && lesson.studentId !== user.id)) {
+  if (!lesson || !isLessonParticipant(lesson, user.id)) {
     return <p className="text-sm text-rose-600">この授業にアクセスできません。</p>;
   }
 

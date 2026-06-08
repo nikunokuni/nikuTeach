@@ -2,14 +2,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { SUBJECTS } from "@/lib/subjects";
+import { getPointsBalance } from "@/lib/points";
 import BookingWizard from "./BookingWizard";
 
 export default async function BookPage() {
   const user = await requireUser();
-  const me = await prisma.user.findUniqueOrThrow({
-    where: { id: user.id },
-    select: { pointsBalance: true },
-  });
+  const pointsBalance = await getPointsBalance(user.id);
 
   // 今後の授業可能枠(窓)と、その中の既存予約を取得
   const slots = await prisma.slot.findMany({
@@ -45,12 +43,12 @@ export default async function BookPage() {
           </p>
         </div>
         <Link href="/student/points" className="card !px-4 !py-2 text-center">
-          <p className="text-lg font-black text-brand-600">{me.pointsBalance}<span className="text-xs">pt</span></p>
+          <p className="text-lg font-black text-brand-600">{pointsBalance}<span className="text-xs">pt</span></p>
           <p className="text-[10px] text-slate-400">ポイント購入 →</p>
         </Link>
       </div>
 
-      {me.pointsBalance === 0 && (
+      {pointsBalance === 0 && (
         <div className="rounded-xl bg-amber-50 p-4 text-sm text-amber-700 ring-1 ring-amber-200">
           予約ポイントがありません。
           <Link href="/student/points" className="font-semibold underline">ポイントを購入</Link>
@@ -63,7 +61,7 @@ export default async function BookPage() {
           現在予約できる枠がありません。先生が枠を追加するまでお待ちください。
         </div>
       ) : (
-        <BookingWizard windows={windows} balance={me.pointsBalance} subjects={[...SUBJECTS]} />
+        <BookingWizard windows={windows} balance={pointsBalance} subjects={[...SUBJECTS]} />
       )}
     </div>
   );

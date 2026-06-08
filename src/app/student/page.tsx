@@ -2,12 +2,13 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { fmtRange } from "@/lib/format";
+import { getPointsBalance } from "@/lib/points";
 
 export default async function StudentHome() {
   const user = await requireUser();
   const now = new Date();
-  const [me, upcoming, past] = await Promise.all([
-    prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { pointsBalance: true } }),
+  const [pointsBalance, upcoming, past] = await Promise.all([
+    getPointsBalance(user.id),
     prisma.lesson.findMany({
       where: { studentId: user.id, status: { not: "CANCELLED" }, endTime: { gte: now } },
       orderBy: { startTime: "asc" },
@@ -27,7 +28,7 @@ export default async function StudentHome() {
         <h1 className="text-xl font-bold">こんにちは、{user.name}</h1>
         <div className="flex items-center gap-2">
           <Link href="/student/points" className="card !px-3 !py-2 text-center">
-            <p className="text-lg font-black text-brand-600">{me.pointsBalance}<span className="text-xs">pt</span></p>
+            <p className="text-lg font-black text-brand-600">{pointsBalance}<span className="text-xs">pt</span></p>
           </Link>
           <Link href="/student/book" className="btn-primary">＋ 授業を予約</Link>
         </div>

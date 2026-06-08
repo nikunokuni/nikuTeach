@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { bookLessonAction } from "./actions";
+import { fmtDate, fmtTime } from "@/lib/format";
 
 type Win = {
   id: string;
@@ -11,15 +12,7 @@ type Win = {
   booked: { start: string; end: string }[];
 };
 
-const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 const STEP = 30 * 60 * 1000;
-
-function fmtDate(d: Date) {
-  return `${d.getMonth() + 1}/${d.getDate()}(${WEEK[d.getDay()]})`;
-}
-function fmtTime(d: Date) {
-  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-}
 
 // 指定区間が予約済みと重ならないか
 function isFree(start: number, end: number, booked: { s: number; e: number }[]) {

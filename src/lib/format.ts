@@ -1,4 +1,4 @@
-const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+export const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
 
 export function fmtDate(d: Date | string): string {
   const date = typeof d === "string" ? new Date(d) : d;
@@ -14,9 +14,4 @@ export function fmtTime(d: Date | string): string {
 
 export function fmtRange(start: Date | string, end: Date | string): string {
   return `${fmtDate(start)} ${fmtTime(start)}〜${fmtTime(end)}`;
-}
-
-export function fmtDateTimeLocal(d: Date): string {
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

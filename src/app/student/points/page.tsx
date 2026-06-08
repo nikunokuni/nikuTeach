@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { PACKS } from "@/lib/packs";
+import { getPointsBalance } from "@/lib/points";
 
 const REASON_LABEL: Record<string, string> = {
   PURCHASE: "購入",
@@ -11,15 +12,14 @@ const REASON_LABEL: Record<string, string> = {
 
 export default async function PointsPage() {
   const user = await requireUser();
-  const me = await prisma.user.findUniqueOrThrow({
-    where: { id: user.id },
-    select: { pointsBalance: true },
-  });
-  const history = await prisma.pointTransaction.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-    take: 30,
-  });
+  const [pointsBalance, history] = await Promise.all([
+    getPointsBalance(user.id),
+    prisma.pointTransaction.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -30,7 +30,7 @@ export default async function PointsPage() {
 
       <div className="card flex items-center justify-between">
         <span className="text-sm text-slate-500">現在の残高</span>
-        <span className="text-3xl font-black text-brand-600">{me.pointsBalance}<span className="text-base">pt</span></span>
+        <span className="text-3xl font-black text-brand-600">{pointsBalance}<span className="text-base">pt</span></span>
       </div>
 
       <div>

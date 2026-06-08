@@ -1,6 +1,15 @@
 import { prisma } from "./db";
 import type { Prisma } from "@prisma/client";
 
+// ポイント残高を取得する。
+export async function getPointsBalance(userId: string): Promise<number> {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { pointsBalance: true },
+  });
+  return user.pointsBalance;
+}
+
 // ポイントを付与する (購入完了時など)。履歴も残す。
 export async function creditPoints(
   userId: string,

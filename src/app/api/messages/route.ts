@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/apiAuth";
+import { findStudentById } from "@/lib/students";
 
 // チャットは「生徒ごとのスレッド」。
 // - 生徒は自分のスレッドのみ閲覧/投稿可能
@@ -9,13 +10,15 @@ async function resolveThread(user: { id: string; role: string }, studentIdParam:
   if (user.role === "STUDENT") return user.id;
   // teacher
   if (!studentIdParam) return null;
-  const student = await prisma.user.findFirst({ where: { id: studentIdParam, role: "STUDENT" } });
+  const student = await findStudentById(studentIdParam);
   return student ? student.id : null;
 }
 
 export async function GET(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireApiUser();
+  if (auth.error) return auth.error;
+  const user = auth.user;
+
   const url = new URL(req.url);
   const studentId = await resolveThread(user, url.searchParams.get("studentId"));
   if (!studentId) return NextResponse.json({ error: "thread not found" }, { status: 404 });
@@ -30,8 +33,10 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  const auth = await requireApiUser();
+  if (auth.error) return auth.error;
+  const user = auth.user;
+
   const body = await req.json().catch(() => null);
   const text = String(body?.body || "").trim();
   const studentId = await resolveThread(user, body?.studentId ?? null);

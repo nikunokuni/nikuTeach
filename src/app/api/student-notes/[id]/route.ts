@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/apiAuth";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const auth = await requireApiUser("TEACHER");
+  if (auth.error) return auth.error;
+
   const { id } = await params;
   const body = await req.json().catch(() => null);
   const text = String(body?.body || "").trim();
@@ -16,10 +15,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user || user.role !== "TEACHER") {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const auth = await requireApiUser("TEACHER");
+  if (auth.error) return auth.error;
+
   const { id } = await params;
   await prisma.studentNote.delete({ where: { id } });
   return NextResponse.json({ ok: true });

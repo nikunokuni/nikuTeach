@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { fmtTime } from "@/lib/format";
-
-const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+import { fmtTime, WEEK } from "@/lib/format";
 
 function parseYM(ym?: string): { year: number; month: number } {
   const now = new Date();
