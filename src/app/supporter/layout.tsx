@@ -4,6 +4,7 @@ import AppShell from "@/components/AppShell";
 
 const NAV = [
   { href: "/supporter", label: "ホーム" },
+  { href: "/supporter/support", label: "応援する" },
 ];
 
 export default async function SupporterLayout({ children }: { children: React.ReactNode }) {

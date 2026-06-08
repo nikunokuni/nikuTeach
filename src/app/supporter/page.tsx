@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 
@@ -11,11 +12,14 @@ export default async function SupporterHome() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">こんにちは、{user.name}さん</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          先生や生徒が投稿した「最近がんばってること」「勉強の状況」のエピソードです。応援の気持ちを届けてください。
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold">こんにちは、{user.name}さん</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            先生や生徒が投稿した「最近がんばってること」「勉強の状況」のエピソードです。応援の気持ちを届けてください。
+          </p>
+        </div>
+        <Link href="/supporter/support" className="btn-primary whitespace-nowrap">＋ 応援する</Link>
       </div>
 
       {episodes.length === 0 ? (

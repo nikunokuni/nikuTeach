@@ -4,6 +4,13 @@ import { roleHomePath, type SessionUser } from "@/lib/auth";
 
 type NavItem = { href: string; label: string };
 
+const FOOTER_LINKS: NavItem[] = [
+  { href: "#", label: "にくティーチについて" },
+  { href: "#", label: "利用規約" },
+  { href: "#", label: "プライバシーポリシー" },
+  { href: "#", label: "ご意見要望はこちら" },
+];
+
 const ROLE_BADGE: Record<SessionUser["role"], { label: string; className: string }> = {
   TEACHER: { label: "先生", className: "bg-brand-100 text-brand-700" },
   STUDENT: { label: "生徒", className: "bg-emerald-100 text-emerald-700" },
@@ -45,6 +52,13 @@ export default function AppShell({
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <footer className="border-t border-slate-200 py-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 text-xs text-slate-400">
+          {FOOTER_LINKS.map((l) => (
+            <Link key={l.label} href={l.href} className="hover:text-slate-600">{l.label}</Link>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 }
