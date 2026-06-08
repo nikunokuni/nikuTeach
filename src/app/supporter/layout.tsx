@@ -4,6 +4,7 @@ import AppShell from "@/components/AppShell";
 
 const NAV = [
   { href: "/supporter", label: "ホーム" },
+  { href: "/supporter/students", label: "お気に入りの生徒" },
   { href: "/supporter/support", label: "応援する" },
 ];
 

@@ -46,6 +46,14 @@ model User {
   cheatSheets       CheatSheet[]    @relation("TeacherCheatSheets")
   // 応援団向けに投稿した「がんばってることエピソード」
   episodes          Episode[]
+  // 応援団: お気に入り登録した生徒
+  favoriteStudents  Favorite[]      @relation("SupporterFavorites")
+  // 生徒: 自分をお気に入り登録している応援団
+  favoritedBy       Favorite[]      @relation("StudentFavoritedBy")
+  // 応援団: エピソードへの「いいね」
+  episodeLikes      EpisodeLike[]
+  // 応援団: エピソードへのコメント
+  episodeComments   EpisodeComment[]
 }
 
 // 授業可能な時間帯(窓): 先生が登録。生徒はこの窓の中の一部を予約する。
@@ -209,5 +217,48 @@ model Episode {
   body       String
   createdAt  DateTime @default(now())
 
+  likes      EpisodeLike[]
+  comments   EpisodeComment[]
+
   @@index([authorId])
+}
+
+// 応援団のお気に入り生徒: 登録すると、その生徒の投稿がフィードで優先的に表示される
+model Favorite {
+  id          String   @id @default(cuid())
+  supporter   User     @relation("SupporterFavorites", fields: [supporterId], references: [id])
+  supporterId String
+  student     User     @relation("StudentFavoritedBy", fields: [studentId], references: [id])
+  studentId   String
+  createdAt   DateTime @default(now())
+
+  @@unique([supporterId, studentId])
+  @@index([supporterId])
+  @@index([studentId])
+}
+
+// エピソードへの「いいね」: 応援団から
+model EpisodeLike {
+  id          String   @id @default(cuid())
+  episode     Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  episodeId   String
+  supporter   User     @relation(fields: [supporterId], references: [id])
+  supporterId String
+  createdAt   DateTime @default(now())
+
+  @@unique([episodeId, supporterId])
+  @@index([episodeId])
+}
+
+// エピソードへのコメント: 応援団から
+model EpisodeComment {
+  id        String   @id @default(cuid())
+  episode   Episode  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  episodeId String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([episodeId])
 }
